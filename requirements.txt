@@ -1,0 +1,10 @@
+# 版本按 2026-10-22 实测锁定（tianjin-travel-agent 复用 ticket-agent 环境）
+fastapi==0.153.0
+uvicorn==0.54.0
+openai==1.109.1
+pydantic==2.14.1
+httpx==0.28.1
+tenacity==9.2.1
+langgraph==1.2.16
+langchain-core==1.6.12
+requests==2.34.2

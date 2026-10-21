@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天津 AI 旅行规划平台</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f5f6f8; color: #1f2329; font-size: 14px; line-height: 1.6;
+  }
+  .header {
+    background: #fff; border-bottom: 1px solid #e5e6eb; padding: 14px 24px;
+    display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-size: 17px; font-weight: 600; }
+  .logo span { color: #c9302c; }
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    padding: 6px 16px; border-radius: 6px; cursor: pointer; color: #4e5969; border: none;
+    background: transparent; font-size: 14px;
+  }
+  .tab.active { background: #f2f3f5; color: #1f2329; font-weight: 500; }
+  .container { max-width: 1240px; margin: 0 auto; padding: 20px; }
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  .card {
+    background: #fff; border: 1px solid #e5e6eb; border-radius: 10px; padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: #4e5969; margin: 10px 0 4px; }
+  input, select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid #dcdfe6; border-radius: 6px;
+    font-size: 14px; font-family: inherit; background: #fff;
+  }
+  input:focus, textarea:focus { outline: none; border-color: #c9302c; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    padding: 4px 12px; border: 1px solid #dcdfe6; border-radius: 14px; font-size: 13px;
+    cursor: pointer; background: #fff; color: #4e5969;
+  }
+  .chip.on { background: #fef0f0; border-color: #c9302c; color: #c9302c; }
+  .btn {
+    width: 100%; padding: 10px; background: #c9302c; color: #fff; border: none;
+    border-radius: 6px; font-size: 14px; cursor: pointer; margin-top: 14px; font-family: inherit;
+  }
+  .btn:hover { background: #b3282a; }
+  .btn:disabled { background: #c9cdd4; cursor: not-allowed; }
+  .btn.ghost { background: #fff; color: #4e5969; border: 1px solid #dcdfe6; }
+  .msg-list { max-height: 320px; overflow-y: auto; margin-bottom: 10px; }
+  .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+  .msg.user { background: #f2f3f5; }
+  .msg.bot { background: #fef0f0; color: #8c2220; white-space: pre-wrap; }
+  .day-card { margin-bottom: 16px; }
+  .day-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 8px; border-bottom: 2px solid #f2f3f5; margin-bottom: 12px;
+  }
+  .day-title { font-size: 15px; font-weight: 600; }
+  .day-theme { font-size: 13px; color: #86909c; }
+  .item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #f2f3f5; }
+  .item:last-child { border-bottom: none; }
+  .time { width: 96px; font-size: 13px; color: #86909c; font-variant-numeric: tabular-nums; }
+  .body { flex: 1; }
+  .name { font-weight: 500; }
+  .meta { font-size: 12px; color: #86909c; margin-top: 2px; }
+  .tag-food { color: #d48806; }
+  .tag-spot { color: #096dd9; }
+  .travel { font-size: 12px; color: #86909c; padding: 4px 0 4px 108px; }
+  .budget-box {
+    display: flex; gap: 24px; padding: 12px; background: #f7f8fa;
+    border-radius: 8px; font-size: 13px; margin-bottom: 12px;
+  }
+  .budget-box b { font-size: 16px; color: #c9302c; }
+  .notice { font-size: 12px; padding: 8px 12px; border-radius: 6px; margin-top: 8px; }
+  .notice.info { background: #f2f3f5; color: #4e5969; }
+  .notice.warn { background: #fff7e6; color: #ad6800; }
+  .versions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ver {
+    padding: 3px 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 12px;
+    cursor: pointer; background: #fff;
+  }
+  .ver.cur { background: #c9302c; color: #fff; border-color: #c9302c; }
+  .post { padding: 14px 0; border-bottom: 1px solid #f2f3f5; }
+  .post h4 { font-size: 14px; margin-bottom: 4px; }
+  .post p { font-size: 13px; color: #4e5969; }
+  .post-actions { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: #86909c; }
+  .post-actions span { cursor: pointer; }
+  .post-actions span:hover { color: #c9302c; }
+  .empty { text-align: center; color: #86909c; padding: 40px 0; font-size: 13px; }
+  .loading { text-align: center; color: #86909c; padding: 30px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">天津 <span>AI</span> 旅行规划平台</div>
+    <div class="tabs">
+      <button class="tab" :class="{active: tab==='plan'}" @click="tab='plan'">行程规划</button>
+      <button class="tab" :class="{active: tab==='square'}" @click="tab='square'">攻略广场</button>
+    </div>
+    <div style="margin-left:auto;font-size:12px;color:#86909c">
+      {{ statusText }}
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- ============ 行程规划 ============ -->
+    <div class="layout" v-show="tab==='plan'">
+      <div>
+        <div class="card">
+          <h3>出行需求</h3>
+          <div class="row">
+            <div><label>天数</label>
+              <select v-model.number="req.days">
+                <option v-for="d in [1,2,3,4,5]" :key="d" :value="d">{{d}} 天</option>
+              </select>
+            </div>
+            <div><label>人数</label>
+              <input type="number" v-model.number="req.people" min="1" max="10">
+            </div>
+          </div>
+          <label>出发日期</label>
+          <input type="date" v-model="req.start_date">
+          <label>总预算（元）</label>
+          <input type="number" v-model.number="req.budget" step="500">
+          <label>交通方式</label>
+          <select v-model="req.transport">
+            <option value="metro">地铁公交</option>
+            <option value="walk">步行</option>
+            <option value="bike">骑行</option>
+            <option value="taxi">打车</option>
+            <option value="car">自驾</option>
+          </select>
+          <label>兴趣标签</label>
+          <div class="chips">
+            <button v-for="t in allInterests" :key="t" class="chip"
+              :class="{on: req.interests.includes(t)}" @click="toggleInterest(t)">{{t}}</button>
+          </div>
+          <label>同行人</label>
+          <input v-model="req.with_who" placeholder="如：情侣 / 带老人 / 亲子">
+          <button class="btn" @click="generate" :disabled="loading">
+            {{ loading ? '规划中，请稍候…' : '生成行程' }}
+          </button>
+        </div>
+
+        <div class="card" v-if="sessionId">
+          <h3>对话调整</h3>
+          <div class="msg-list">
+            <div v-for="(m,i) in messages" :key="i" class="msg" :class="m.role">
+              {{ m.text }}
+            </div>
+          </div>
+          <input v-model="chatInput" @keyup.enter="send"
+                 placeholder="试试：第二天轻松点 / 加顿火锅 / 去掉五大道 / 推荐附近酒店">
+          <button class="btn ghost" @click="send" :disabled="!chatInput">发送</button>
+          <div style="margin-top:12px">
+            <label>版本历史（点击回退）</label>
+            <div class="versions">
+              <button v-for="v in versions" :key="v.version" class="ver"
+                :class="{cur: v.version===curVersion}" @click="rollback(v.version)">
+                v{{ v.version }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div v-if="loading" class="card loading">
+          正在检索天津本地知识 → 编排行程 → 校验冲突 → 优化路线…<br>通常需要 20-40 秒
+        </div>
+        <div v-else-if="!itin" class="card empty">
+          填好左侧需求，点「生成行程」开始
+        </div>
+        <div v-else>
+          <div class="card">
+            <h3>{{ itin.title }}</h3>
+            <div class="budget-box">
+              <div>门票 <b>¥{{ itin.budget_estimate.ticket }}</b></div>
+              <div>餐饮 <b>¥{{ itin.budget_estimate.food }}</b></div>
+              <div>交通 <b>¥{{ itin.budget_estimate.transport }}</b></div>
+              <div>合计 <b>¥{{ itin.budget_estimate.total }}</b></div>
+            </div>
+            <div v-for="w in itin.warnings" :key="w" class="notice warn">⚠ {{ w }}</div>
+          </div>
+
+          <div class="card day-card" v-for="d in itin.days" :key="d.day">
+            <div class="day-head">
+              <div>
+                <span class="day-title">第 {{ d.day }} 天</span>
+                <span class="day-theme"> {{ d.date }} {{ d.weekday }} · {{ d.theme }}</span>
+              </div>
+            </div>
+            <template v-for="(it, idx) in d.items" :key="idx">
+              <div class="item">
+                <div class="time">{{ it.start }} - {{ it.end }}</div>
+                <div class="body">
+                  <div class="name">
+                    <span :class="it.type==='meal' ? 'tag-food' : 'tag-spot'">
+                      {{ it.type==='meal' ? '🍜' : '📍' }}
+                    </span>
+                    {{ it.name }}
+                  </div>
+                  <div class="meta">
+                    <span v-if="it.stay_min && it.type!=='meal'">建议 {{ it.stay_min }} 分钟</span>
+                    <span v-if="it.district"> · {{ it.district }}</span>
+                    <span v-if="it.ticket"> · {{ it.ticket }}</span>
+                  </div>
+                  <div class="meta" v-if="it.note">{{ it.note }}</div>
+                </div>
+              </div>
+              <div class="travel" v-if="d.travel_notes && d.travel_notes.length && it.type!=='meal' && idx>0 && commuteFor(d, it.name)">
+                🚇 {{ commuteFor(d, it.name) }}
+              </div>
+            </template>
+            <div class="notice info" v-if="d.tips">{{ d.tips }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 攻略广场 ============ -->
+    <div v-show="tab==='square'">
+      <div class="layout">
+        <div>
+          <div class="card">
+            <h3>发布攻略</h3>
+            <label>作者</label>
+            <input v-model="post.author" placeholder="你的昵称">
+            <label>标题</label>
+            <input v-model="post.title" placeholder="如：天津两日暴走路线分享">
+            <label>正文</label>
+            <textarea v-model="post.content" rows="5"
+              placeholder="写点真实的体验，机审会拦截水帖和引流内容"></textarea>
+            <label>标签</label>
+            <input v-model="post.tags" placeholder="用逗号分隔，如 美食,拍照">
+            <button class="btn" @click="publish">发布</button>
+            <div class="notice info" v-if="publishMsg">{{ publishMsg }}</div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h3>大家分享的玩法</h3>
+            <div class="chips" style="margin-bottom:12px">
+              <button class="chip" :class="{on: sort==='new'}" @click="loadPosts('new')">最新</button>
+              <button class="chip" :class="{on: sort==='hot'}" @click="loadPosts('hot')">最热</button>
+            </div>
+            <div v-if="!posts.length" class="empty">还没有攻略，来发第一篇</div>
+            <div class="post" v-for="p in posts" :key="p.id">
+              <h4>{{ p.title }} <span v-if="p.featured" style="color:#c9302c;font-size:12px">推荐</span></h4>
+              <p>{{ p.content }}</p>
+              <div class="post-actions">
+                <span>{{ p.author }} · {{ p.created_at.slice(5,16) }}</span>
+                <span @click="like(p)">👍 {{ p.likes }}</span>
+                <span @click="fav(p)">⭐ {{ p.favorites }}</span>
+                <span @click="toggleComments(p)">💬 评论</span>
+              </div>
+              <div v-if="p.showComments" style="margin-top:8px;padding-left:12px">
+                <div v-for="(c,i) in (comments[p.id]||[])" :key="i" style="font-size:12px;color:#4e5969">
+                  {{ c.author }}：{{ c.content }}
+                </div>
+                <input v-model="commentDraft[p.id]" placeholder="说两句…"
+                  @keyup.enter="submitComment(p)" style="margin-top:6px">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed } = Vue;
+const API = location.protocol === 'file:' ? 'http://localhost:8000' : '';
+
+createApp({
+  setup() {
+    const today = new Date();
+    const req = reactive({
+      city: '天津', days: 3,
+      start_date: new Date(today.getTime() + 7*86400000).toISOString().slice(0,10),
+      people: 2, budget: 3000, transport: 'metro',
+      interests: ['美食','拍照'], with_who: '', pace: '适中'
+    });
+    const allInterests = ['美食','拍照','历史建筑','亲子','博物馆','夜景','购物','户外','文艺','小众'];
+
+    const tab = ref('plan');
+    const loading = ref(false);
+    const itin = ref(null);
+    const sessionId = ref('');
+    const versions = ref([]);
+    const curVersion = ref(1);
+    const messages = ref([]);
+    const chatInput = ref('');
+    const posts = ref([]);
+    const comments = reactive({});
+    const commentDraft = reactive({});
+    const sort = ref('new');
+    const publishMsg = ref('');
+    const post = reactive({ author:'', title:'', content:'', tags:'' });
+
+    const statusText = computed(() => sessionId.value ? '会话 ' + sessionId.value : '未开始');
+
+    const toggleInterest = (t) => {
+      const i = req.interests.indexOf(t);
+      i >= 0 ? req.interests.splice(i,1) : req.interests.push(t);
+    };
+
+    const generate = async () => {
+      loading.value = true; itin.value = null; messages.value = [];
+      try {
+        const r = await fetch(API + '/api/plan', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(req)
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        sessionId.value = d.session_id;
+        itin.value = d.itinerary;
+        curVersion.value = d.version;
+        await loadVersions();
+        messages.value.push({ role:'bot', text: d.reply });
+      } catch (e) {
+        messages.value.push({ role:'bot', text:'生成失败：' + e.message });
+      }
+      loading.value = false;
+    };
+
+    const send = async () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatInput.value = '';
+      messages.value.push({ role:'user', text });
+      try {
+        const r = await fetch(API + '/api/chat', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ session_id: sessionId.value, message: text })
+        });
+        const d = await r.json();
+        messages.value.push({ role:'bot', text: d.reply });
+        itin.value = d.itinerary;
+        curVersion.value = d.version;
+        await loadVersions();
+      } catch (e) {
+        messages.value.push({ role:'bot', text:'处理失败：' + e.message });
+      }
+    };
+
+    const loadVersions = async () => {
+      const r = await fetch(API + '/api/session/' + sessionId.value + '/versions');
+      const d = await r.json();
+      versions.value = d.versions || [];
+    };
+
+    const rollback = async (v) => {
+      const r = await fetch(API + '/api/rollback', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ session_id: sessionId.value, version: v })
+      });
+      const d = await r.json();
+      itin.value = d.itinerary; curVersion.value = v;
+      messages.value.push({ role:'bot', text: d.reply });
+    };
+
+    const commuteFor = (day, name) => {
+      const notes = day.travel_notes || [];
+      return notes.find(n => n.startsWith(name + ' →')) || '';
+    };
+
+    const loadPosts = async (s) => {
+      if (s) sort.value = s;
+      const r = await fetch(API + '/api/community/posts?sort=' + sort.value);
+      const d = await r.json();
+      posts.value = (d.posts || []).map(p => ({...p, showComments:false}));
+    };
+
+    const publish = async () => {
+      const r = await fetch(API + '/api/community/posts', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(post)
+      });
+      const d = await r.json();
+      publishMsg.value = d.error || d.message +
+        (d.reasons && d.reasons.length ? '（' + d.reasons.join('；') + '）' : '');
+      if (!d.error) { post.title=''; post.content=''; post.tags=''; loadPosts(); }
+    };
+
+    const like = async (p) => {
+      await fetch(API + '/api/community/posts/' + p.id + '/like', {method:'POST'});
+      p.likes++;
+    };
+    const fav = async (p) => {
+      await fetch(API + '/api/community/posts/' + p.id + '/favorite', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: post.author || 'me' })
+      });
+      p.favorites++;
+    };
+    const toggleComments = async (p) => {
+      p.showComments = !p.showComments;
+      if (p.showComments && !comments[p.id]) {
+        const r = await fetch(API + '/api/community/posts/' + p.id + '/comments');
+        const d = await r.json();
+        comments[p.id] = d.comments || [];
+      }
+    };
+    const submitComment = async (p) => {
+      const content = (commentDraft[p.id] || '').trim();
+      if (!content) return;
+      await fetch(API + '/api/community/posts/' + p.id + '/comments', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ author: post.author || 'me', content })
+      });
+      comments[p.id].push({ author: post.author || 'me', content });
+      commentDraft[p.id] = '';
+    };
+
+    loadPosts();
+    return { tab, req, allInterests, toggleInterest, generate, loading, itin, messages,
+             chatInput, send, versions, curVersion, rollback, commuteFor,
+             posts, loadPosts, sort, post, publish, publishMsg, like, fav,
+             toggleComments, comments, commentDraft, submitComment, statusText };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
